@@ -40,7 +40,7 @@
     cursor: pointer;
     transition: background 0.3s ease;
   }
-  #Search:hover {
+  #clearSearch:hover {
     background: #ff8c7a;
   }
   #categoriesContainer {
@@ -93,6 +93,14 @@
     display: none; /* Hidden by default */
     margin-top: 10px;
   }
+  .answer a {
+    color: #ffa798;
+    text-decoration: underline;
+    transition: color 0.3s ease;
+  }
+  .answer a:hover {
+    color: #ff8c7a;
+  }
   .qa-item.open .answer {
     display: block;
   }
@@ -116,7 +124,7 @@
 <div id="Q&AContainer">
 <div id="QandAHeader">
   <input type="text" id="searchInput" placeholder="Search questions, categories, or tags..." aria-label="Search questions" />
-  <button id="clearSearch">Clear Search</button>
+  <button id="clearSearch">Clear</button>
 </div>
 
 <div id="categoriesContainer" aria-label="Category filters"></div>
@@ -206,7 +214,7 @@
 
       const answer = document.createElement('div');
       answer.className = 'answer';
-      answer.textContent = item.Answer;
+      answer.innerHTML = item.Answer;
 
       itemDiv.appendChild(question);
       itemDiv.appendChild(answer);
