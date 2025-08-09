@@ -27,7 +27,8 @@
     margin-bottom: 20px;
   }
   #searchInput {
-    flex: 1;
+   flex: 1;
+  max-width: 400px;
     min-width: 250px;
     font-size: 1rem;
     padding: 10px 14px;
@@ -123,7 +124,7 @@
 <div id="Q&AContainer">
   <div class="search-container">
     <input type="text" id="searchInput" placeholder="Search questions, categories, or tags..." aria-label="Search questions" />
-    <button id="clearSearchBtn">Clear</button>
+    <button id="clearSearchBtn">Clear Search</button>
   </div>
 
   <div id="categoriesContainer" aria-label="Category filters"></div>
@@ -256,7 +257,7 @@
   function sendIframeHeight() {
     const contentContainer = document.getElementById('Q&AContainer');
     if (contentContainer) {
-      const height = contentContainer.scrollHeight + 20;
+      const height = contentContainer.scrollHeight + 30;
       window.parent.postMessage({ type: 'setIframeHeight', height: height }, 'https://www.menohello.com');
     }
   }
