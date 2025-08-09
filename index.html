@@ -177,15 +177,12 @@
       return inCategory && matchesSearch;
     });
 
-    renderQAItems();
-  }
-
+    <script>
   function renderQAItems() {
     qaContainer.innerHTML = '';
 
     if (filteredData.length === 0) {
       qaContainer.innerHTML = '<p>No results found.</p>';
-      sendIframeHeight();
       return;
     }
 
@@ -201,17 +198,6 @@
       answer.className = 'answer';
       answer.textContent = item.Answer;
 
-      itemDiv.appendChild(question);
-      itemDiv.appendChild(answer);
-
-      itemDiv.addEventListener('click', () => {
-        itemDiv.classList.toggle('open');
-        sendIframeHeight();
-      });
-
-      qaContainer.appendChild(itemDiv);
-    });
-
       // Toggle answer visibility - only one open at a time
       question.addEventListener('click', () => {
         // Close all other answers
@@ -220,9 +206,20 @@
             openAnswer.classList.remove('show');
           }
         });
-        
-    sendIframeHeight();
+
+        // Toggle the clicked one
+        answer.classList.toggle('show');
+
+        // Adjust iframe height
+        sendIframeHeight();
+      });
+
+      itemDiv.appendChild(question);
+      itemDiv.appendChild(answer);
+      qaContainer.appendChild(itemDiv);
+    });
   }
+</script>
 
   // Debounce helper
   function debounce(func, wait) {
