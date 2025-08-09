@@ -80,6 +80,10 @@
     font-weight: 600;
     font-size: 1.1rem;
     margin-bottom: 10px;
+    cursor: pointer;
+  }
+  .question:hover {
+    color: #ffa798;
   }
   .answer {
     font-weight: 400;
@@ -105,24 +109,6 @@
       margin: 3px 6px 3px 0;
       font-size: 0.9rem;
     }
-    
-     .question {
-    cursor: pointer;
-  }
-  .question:hover {
-    color: #ffa798;
-  }
-  .answer {
-    font-weight: 400;
-    font-size: 1rem;
-    line-height: 1.4;
-    white-space: pre-wrap;
-    display: none; /* Hidden by default */
-    margin-top: 10px;
-  }
-  .answer.show {
-    display: block; /* Show when toggled */
-  }
   }
 </style>
 </head>
@@ -145,6 +131,7 @@
   let filteredData = [];
   let categories = new Set();
   let activeCategory = 'All';
+  let currentlyOpenItem = null; // Track the currently open item
 
   const searchInput = document.getElementById('searchInput');
   const clearSearchBtn = document.getElementById('clearSearch');
@@ -195,6 +182,8 @@
       return inCategory && matchesSearch;
     });
 
+    // Reset currently open item when filtering
+    currentlyOpenItem = null;
     renderQAItems();
   }
 
@@ -223,7 +212,19 @@
       itemDiv.appendChild(answer);
 
       itemDiv.addEventListener('click', () => {
-        itemDiv.classList.toggle('open');
+        // If clicking on the currently open item, close it
+        if (currentlyOpenItem === itemDiv) {
+          itemDiv.classList.remove('open');
+          currentlyOpenItem = null;
+        } else {
+          // Close the previously open item if it exists
+          if (currentlyOpenItem) {
+            currentlyOpenItem.classList.remove('open');
+          }
+          // Open the clicked item
+          itemDiv.classList.add('open');
+          currentlyOpenItem = itemDiv;
+        }
         sendIframeHeight();
       });
 
