@@ -178,15 +178,6 @@
     });
 
     renderQAItems();
-
-     // Toggle answer visibility - only one open at a time
-      question.addEventListener('click', () => {
-        // Close all other answers
-        document.querySelectorAll('.answer.show').forEach(openAnswer => {
-          if (openAnswer !== answer) {
-            openAnswer.classList.remove('show');
-          }
-        });
   }
 
   function renderQAItems() {
@@ -221,6 +212,15 @@
       qaContainer.appendChild(itemDiv);
     });
 
+      // Toggle answer visibility - only one open at a time
+      question.addEventListener('click', () => {
+        // Close all other answers
+        document.querySelectorAll('.answer.show').forEach(openAnswer => {
+          if (openAnswer !== answer) {
+            openAnswer.classList.remove('show');
+          }
+        });
+        
     sendIframeHeight();
   }
 
