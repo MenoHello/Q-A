@@ -217,27 +217,46 @@
 </script>
 </div>
 <script>
-  // This script goes into your HTML file on GitHub
-  function sendHeight() {
-    const body = document.body;
-    const html = document.documentElement;
-    const height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+    // 1. Function to send iframe height to parent
+    function sendIframeHeight() {
+        // You'll need a main container div for your products content
+        const contentContainer = document.getElementById('Q&AContainer');
+        if (contentContainer) {
+            // Calculate scroll height and add a small buffer
+            const height = contentContainer.scrollHeight + 20;
+            
+            // Log the height for debugging
+            console.log('GitHub Page: Sending iframe height:', height);
+            
+            // IMPORTANT: The targetOrigin MUST be your Pixpa domain
+            window.parent.postMessage({ type: 'setIframeHeight', height: height }, 'https://www.menohello.com');
+        }
+    }
+    
+    // 2. Set up the observer and initial call
+    
+    // Call on initial page load
+    window.addEventListener('DOMContentLoaded', () => {
+      sendIframeHeight();
+    });
 
-    // Send the height to the parent Pixpa window
-    window.parent.postMessage({
-      type: 'setIframeHeight',
-      height: height
-    }, 'https://www.menohello.com'); // IMPORTANT: Replace '*' with the exact Pixpa domain for security
-  }
-
-  // Run the function initially and whenever the content changes
-  window.addEventListener('load', sendHeight);
-  window.addEventListener('resize', sendHeight);
-
-  // You may need to add this for dynamic content (like filtering)
-  const observer = new MutationObserver(sendHeight);
-  observer.observe(document.body, { childList: true, subtree: true });
+    // Use a ResizeObserver to automatically send a new height whenever the content size changes
+    const containerToObserve = document.getElementById('Q&AContainer'); 
+    if (containerToObserve) {
+        const resizeObserver = new ResizeObserver(entries => {
+            console.log('GitHub Page: ResizeObserver detected change, requesting new height.');
+            sendIframeHeight();
+        });
+        resizeObserver.observe(containerToObserve);
+    }
+    
+    // Fallback for slower-loading content like images
+    window.addEventListener('load', () => {
+      console.log('GitHub Page: window loaded, sending initial height.');
+      sendIframeHeight();
+    });
 </script>
+
 
 </body>
 </html>
