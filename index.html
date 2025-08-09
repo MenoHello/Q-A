@@ -216,29 +216,27 @@
   loadData();
 </script>
 </div>
-  <script>
-  window.addEventListener('message', function(event) {
-    // Log every message received on the Pixpa page for debugging
-    console.log('Pixpa Page: Message received. Origin:', event.origin, 'Data:', event.data);
+<script>
+  // This script goes into your HTML file on GitHub
+  function sendHeight() {
+    const body = document.body;
+    const html = document.documentElement;
+    const height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
 
-    // IMPORTANT: Verify the origin to prevent cross-site scripting (XSS) attacks
-    // This MUST exactly match the origin of your GitHub Pages site.
-    if (event.origin !== 'https://menohello.github.io') { // <--- THIS SHOULD BE THE CORRECT ORIGIN
-      console.warn('Pixpa Page: Discarded message from untrusted origin:', event.origin);
-      return; // Stop processing if origin doesn't match
-    }
+    // Send the height to the parent Pixpa window
+    window.parent.postMessage({
+      type: 'setIframeHeight',
+      height: height
+    }, '*'); // IMPORTANT: Replace '*' with the exact Pixpa domain for security
+  }
 
-    // Check if the message is for setting iframe height
-    if (event.data && event.data.type === 'setIframeHeight') {
-      const iframe = document.getElementById('Q&AIframe'); 
-      if (iframe) {
-        const newHeight = event.data.height;
-        iframe.style.height = newHeight + 'px';
-        console.log('Pixpa Page: Setting iframe height to:', newHeight + 'px');
-      } else {
-        console.error('Pixpa Page: Iframe with ID "Q&AIframe" not found.');      }
-    }
-  });
+  // Run the function initially and whenever the content changes
+  window.addEventListener('load', sendHeight);
+  window.addEventListener('resize', sendHeight);
+
+  // You may need to add this for dynamic content (like filtering)
+  const observer = new MutationObserver(sendHeight);
+  observer.observe(document.body, { childList: true, subtree: true });
 </script>
 
 </body>
