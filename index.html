@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Menopause Q&A</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #ffe9e5;
+    margin: 0;
+    padding: 20px;
+    color: #000;
+  }
+  h1 {
+    font-weight: 600;
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+  }
+  #searchInput {
+    width: 100%;
+    max-width: 500px;
+    font-size: 1rem;
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: 1px solid #ffd2cb;
+    margin-bottom: 20px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 400;
+  }
+  #categoriesContainer {
+    margin-bottom: 25px;
+  }
+  .category-btn {
+    background: white;
+    border: 1px solid #ffd2cb;
+    border-radius: 6px;
+    padding: 8px 16px;
+    margin: 4px 8px 4px 0;
+    cursor: pointer;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    transition: background-color 0.3s ease;
+  }
+  .category-btn.active,
+  .category-btn:hover {
+    background-color: #ffa798;
+    color: white;
+    border-color: #ffa798;
+  }
+  .qa-item {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+  .question {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+  }
+  .answer {
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+  }
+  @media (max-width: 600px) {
+    #searchInput {
+      max-width: 100%;
+    }
+    .category-btn {
+      padding: 6px 12px;
+      margin: 3px 6px 3px 0;
+      font-size: 0.9rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+<h1>Peri/Menopause Q&amp;A</h1>
+<input type="text" id="searchInput" placeholder="Search questions, categories, or tags..." aria-label="Search questions" />
+
+<div id="categoriesContainer" aria-label="Category filters"></div>
+
+<div id="qaContainer" role="main" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<script>
+  const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTO1U9U8o-4nOTkHG8X76aZa2OeOyJHdl0ENDM0dASstn9hStwSFLwbKwlswDG-hWe_ildJ8zVy2eja/pub?gid=0&single=true&output=csv';
+
+  let allData = [];
+  let filteredData = [];
+  let categories = new Set();
+  let activeCategory = 'All';
+
+  const searchInput = document.getElementById('searchInput');
+  const categoriesContainer = document.getElementById('categoriesContainer');
+  const qaContainer = document.getElementById('qaContainer');
+
+  function createCategoryButtons() {
+    categoriesContainer.innerHTML = '';
+
+    // Add "All" button first
+    const allBtn = document.createElement('button');
+    allBtn.textContent = 'All';
+    allBtn.className = 'category-btn active';
+    allBtn.addEventListener('click', () => {
+      activeCategory = 'All';
+      updateActiveCategoryButtons();
+      filterAndRender();
+    });
+    categoriesContainer.appendChild(allBtn);
+
+    Array.from(categories).sort().forEach(cat => {
+      const btn = document.createElement('button');
+      btn.textContent = cat;
+      btn.className = 'category-btn';
+      btn.addEventListener('click', () => {
+        activeCategory = cat;
+        updateActiveCategoryButtons();
+        filterAndRender();
+      });
+      categoriesContainer.appendChild(btn);
+    });
+  }
+
+  function updateActiveCategoryButtons() {
+    document.querySelectorAll('.category-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.textContent === activeCategory);
+    });
+  }
+
+  function filterAndRender() {
+    const searchTerm = searchInput.value.trim().toLowerCase();
+
+    filteredData = allData.filter(item => {
+      const inCategory = (activeCategory === 'All' || item.Category === activeCategory);
+      const searchableText = (item.Category + ' ' + item.Question + ' ' + item.Tags).toLowerCase();
+      const matchesSearch = searchableText.includes(searchTerm);
+
+      return inCategory && matchesSearch;
+    });
+
+    renderQAItems();
+  }
+
+  function renderQAItems() {
+    qaContainer.innerHTML = '';
+
+    if (filteredData.length === 0) {
+      qaContainer.innerHTML = '<p>No results found.</p>';
+      return;
+    }
+
+    filteredData.forEach(item => {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'qa-item';
+
+      const question = document.createElement('div');
+      question.className = 'question';
+      question.textContent = item.Question;
+
+      const answer = document.createElement('div');
+      answer.className = 'answer';
+      answer.textContent = item.Answer;
+
+      itemDiv.appendChild(question);
+      itemDiv.appendChild(answer);
+      qaContainer.appendChild(itemDiv);
+    });
+  }
+
+  // Debounce helper to avoid excessive filtering during typing
+  function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+
+  function loadData() {
+    Papa.parse(csvUrl, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        allData = results.data.map(row => {
+          // Normalize property names in case of whitespace
+          return {
+            Category: row['Category']?.trim() || '',
+            Question: row['Question']?.trim() || '',
+            Answer: row['Answer']?.trim() || '',
+            Tags: row['Tags']?.trim() || '',
+          };
+        });
+
+        // Gather unique categories for buttons
+        categories = new Set(allData.map(item => item.Category).filter(c => c));
+
+        createCategoryButtons();
+        filterAndRender();
+      },
+      error: function(err) {
+        qaContainer.innerHTML = '<p>Error loading data.</p>';
+        console.error('CSV load error:', err);
+      }
+    });
+  }
+
+  searchInput.addEventListener('input', debounce(filterAndRender, 250));
+
+  loadData();
+</script>
+
+</body>
+</html>
