@@ -6,30 +6,23 @@
 <title>Menopause Q&A</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
 <style>
-  body {
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow-y: hidden; /* Prevent vertical scrollbar inside iframe */
     font-family: 'Poppins', sans-serif;
     background: #ffe9e5;
-    margin: 0;
-    padding: 20px;
     color: #000;
-    overflow-x: hidden; /* Prevent horizontal scrollbar */
   }
-  h1 {
-    font-weight: 600;
-    font-size: 1.8rem;
-    margin-bottom: 20px;
-  }
-  .search-container {
+  #QandAHeader {
     display: flex;
     gap: 10px;
     align-items: center;
-    flex-wrap: wrap;
     margin-bottom: 20px;
+    max-width: 520px; /* Controls width of search + button */
   }
   #searchInput {
-   flex: 1;
-  max-width: 400px;
-    min-width: 250px;
+    flex: 1;
     font-size: 1rem;
     padding: 10px 14px;
     border-radius: 6px;
@@ -37,19 +30,18 @@
     font-family: 'Poppins', sans-serif;
     font-weight: 400;
   }
-  #clearSearchBtn {
+  #clearSearch {
     background: #ffa798;
     border: none;
     color: white;
     padding: 10px 14px;
     border-radius: 6px;
-    cursor: pointer;
-    font-family: 'Poppins', sans-serif;
     font-weight: 600;
-    transition: background-color 0.3s ease;
+    cursor: pointer;
+    transition: background 0.3s ease;
   }
-  #clearSearchBtn:hover {
-    background: #ff7e6b;
+  #clearSearch:hover {
+    background: #ff8c7a;
   }
   #categoriesContainer {
     margin-bottom: 25px;
@@ -77,41 +69,37 @@
     padding: 20px;
     margin-bottom: 20px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    transition: background-color 0.2s ease;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
   .qa-item:hover {
-    background-color: #fff1ee;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   }
   .question {
     font-weight: 600;
     font-size: 1.1rem;
     margin-bottom: 10px;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .toggle-icon {
-    font-weight: bold;
-    font-size: 1.2rem;
-    color: #ffa798;
-    transition: transform 0.2s ease, color 0.2s ease;
-  }
-  .qa-item:hover .toggle-icon {
-    color: #ff7e6b;
   }
   .answer {
     font-weight: 400;
     font-size: 1rem;
     line-height: 1.4;
     white-space: pre-wrap;
-    display: none;
+    display: none; /* Hidden by default */
     margin-top: 10px;
   }
-  .answer.show {
+  .qa-item.open .answer {
     display: block;
   }
   @media (max-width: 600px) {
+    #QandAHeader {
+      flex-direction: column;
+      max-width: 100%;
+    }
+    #searchInput {
+      width: 100%;
+    }
     .category-btn {
       padding: 6px 12px;
       margin: 3px 6px 3px 0;
@@ -122,13 +110,14 @@
 </head>
 <body>
 <div id="Q&AContainer">
-  <div class="search-container">
-    <input type="text" id="searchInput" placeholder="Search questions, categories, or tags..." aria-label="Search questions" />
-    <button id="clearSearchBtn">Clear Search</button>
-  </div>
+<div id="QandAHeader">
+  <input type="text" id="searchInput" placeholder="Search questions, categories, or tags..." aria-label="Search questions" />
+  <button id="clearSearch">Clear</button>
+</div>
 
-  <div id="categoriesContainer" aria-label="Category filters"></div>
-  <div id="qaContainer" role="main" aria-live="polite"></div>
+<div id="categoriesContainer" aria-label="Category filters"></div>
+
+<div id="qaContainer" role="main" aria-live="polite"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script>
@@ -140,12 +129,14 @@
   let activeCategory = 'All';
 
   const searchInput = document.getElementById('searchInput');
-  const clearSearchBtn = document.getElementById('clearSearchBtn');
+  const clearSearchBtn = document.getElementById('clearSearch');
   const categoriesContainer = document.getElementById('categoriesContainer');
   const qaContainer = document.getElementById('qaContainer');
 
   function createCategoryButtons() {
     categoriesContainer.innerHTML = '';
+
+    // Add "All" button first
     const allBtn = document.createElement('button');
     allBtn.textContent = 'All';
     allBtn.className = 'category-btn active';
@@ -177,40 +168,54 @@
 
   function filterAndRender() {
     const searchTerm = searchInput.value.trim().toLowerCase();
+
     filteredData = allData.filter(item => {
       const inCategory = (activeCategory === 'All' || item.Category === activeCategory);
       const searchableText = (item.Category + ' ' + item.Question + ' ' + item.Tags).toLowerCase();
-      return inCategory && searchableText.includes(searchTerm);
+      const matchesSearch = searchableText.includes(searchTerm);
+
+      return inCategory && matchesSearch;
     });
+
     renderQAItems();
   }
 
   function renderQAItems() {
     qaContainer.innerHTML = '';
+
     if (filteredData.length === 0) {
       qaContainer.innerHTML = '<p>No results found.</p>';
+      sendIframeHeight();
       return;
     }
+
     filteredData.forEach(item => {
       const itemDiv = document.createElement('div');
       itemDiv.className = 'qa-item';
+
       const question = document.createElement('div');
       question.className = 'question';
-      question.innerHTML = `<span>${item.Question}</span><span class="toggle-icon">+</span>`;
+      question.textContent = item.Question;
+
       const answer = document.createElement('div');
       answer.className = 'answer';
       answer.textContent = item.Answer;
-      question.addEventListener('click', () => {
-        answer.classList.toggle('show');
-        const icon = question.querySelector('.toggle-icon');
-        icon.textContent = answer.classList.contains('show') ? '−' : '+';
-      });
+
       itemDiv.appendChild(question);
       itemDiv.appendChild(answer);
+
+      itemDiv.addEventListener('click', () => {
+        itemDiv.classList.toggle('open');
+        sendIframeHeight();
+      });
+
       qaContainer.appendChild(itemDiv);
     });
+
+    sendIframeHeight();
   }
 
+  // Debounce helper
   function debounce(func, wait) {
     let timeout;
     return function(...args) {
@@ -231,7 +236,9 @@
           Answer: row['Answer']?.trim() || '',
           Tags: row['Tags']?.trim() || '',
         }));
+
         categories = new Set(allData.map(item => item.Category).filter(c => c));
+
         createCategoryButtons();
         filterAndRender();
       },
@@ -245,8 +252,6 @@
   searchInput.addEventListener('input', debounce(filterAndRender, 250));
   clearSearchBtn.addEventListener('click', () => {
     searchInput.value = '';
-    activeCategory = 'All';
-    updateActiveCategoryButtons();
     filterAndRender();
   });
 
@@ -254,20 +259,20 @@
 </script>
 </div>
 <script>
-  function sendIframeHeight() {
-    const contentContainer = document.getElementById('Q&AContainer');
-    if (contentContainer) {
-      const height = contentContainer.scrollHeight + 30;
-      window.parent.postMessage({ type: 'setIframeHeight', height: height }, 'https://www.menohello.com');
+    function sendIframeHeight() {
+        const contentContainer = document.getElementById('Q&AContainer');
+        if (contentContainer) {
+            const height = contentContainer.scrollHeight + 50; // extra buffer to avoid scrollbar
+            window.parent.postMessage({ type: 'setIframeHeight', height: height }, 'https://www.menohello.com');
+        }
     }
-  }
-  window.addEventListener('DOMContentLoaded', sendIframeHeight);
-  window.addEventListener('load', sendIframeHeight);
-  const containerToObserve = document.getElementById('Q&AContainer');
-  if (containerToObserve) {
-    const resizeObserver = new ResizeObserver(sendIframeHeight);
-    resizeObserver.observe(containerToObserve);
-  }
+    window.addEventListener('DOMContentLoaded', sendIframeHeight);
+    window.addEventListener('load', sendIframeHeight);
+    const containerToObserve = document.getElementById('Q&AContainer'); 
+    if (containerToObserve) {
+        const resizeObserver = new ResizeObserver(sendIframeHeight);
+        resizeObserver.observe(containerToObserve);
+    }
 </script>
 </body>
 </html>
