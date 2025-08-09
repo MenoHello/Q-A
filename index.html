@@ -12,22 +12,43 @@
     margin: 0;
     padding: 20px;
     color: #000;
+    overflow-x: hidden; /* Prevent horizontal scrollbar */
   }
   h1 {
     font-weight: 600;
     font-size: 1.8rem;
     margin-bottom: 20px;
   }
+  .search-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
   #searchInput {
-    width: 100%;
-    max-width: 500px;
+    flex: 1;
+    min-width: 250px;
     font-size: 1rem;
     padding: 10px 14px;
     border-radius: 6px;
     border: 1px solid #ffd2cb;
-    margin-bottom: 20px;
     font-family: 'Poppins', sans-serif;
     font-weight: 400;
+  }
+  #clearSearchBtn {
+    background: #ffa798;
+    border: none;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+  }
+  #clearSearchBtn:hover {
+    background: #ff7e6b;
   }
   #categoriesContainer {
     margin-bottom: 25px;
@@ -55,6 +76,10 @@
     padding: 20px;
     margin-bottom: 20px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    transition: background-color 0.2s ease;
+  }
+  .qa-item:hover {
+    background-color: #fff1ee;
   }
   .question {
     font-weight: 600;
@@ -65,20 +90,13 @@
     justify-content: space-between;
     align-items: center;
   }
-  /* Hover effect for questions */
-  .question:hover {
-    background-color: #fff1ee;
-    border-radius: 6px;
-    padding: 4px 6px;
-    transition: background-color 0.2s ease;
-  }
   .toggle-icon {
     font-weight: bold;
     font-size: 1.2rem;
     color: #ffa798;
     transition: transform 0.2s ease, color 0.2s ease;
   }
-  .question:hover .toggle-icon {
+  .qa-item:hover .toggle-icon {
     color: #ff7e6b;
   }
   .answer {
@@ -86,16 +104,13 @@
     font-size: 1rem;
     line-height: 1.4;
     white-space: pre-wrap;
-    display: none; /* Hidden by default */
+    display: none;
     margin-top: 10px;
   }
   .answer.show {
     display: block;
   }
   @media (max-width: 600px) {
-    #searchInput {
-      max-width: 100%;
-    }
     .category-btn {
       padding: 6px 12px;
       margin: 3px 6px 3px 0;
@@ -106,11 +121,13 @@
 </head>
 <body>
 <div id="Q&AContainer">
-<input type="text" id="searchInput" placeholder="Search questions, categories, or tags..." aria-label="Search questions" />
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Search questions, categories, or tags..." aria-label="Search questions" />
+    <button id="clearSearchBtn">Clear</button>
+  </div>
 
-<div id="categoriesContainer" aria-label="Category filters"></div>
-
-<div id="qaContainer" role="main" aria-live="polite"></div>
+  <div id="categoriesContainer" aria-label="Category filters"></div>
+  <div id="qaContainer" role="main" aria-live="polite"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script>
@@ -122,12 +139,12 @@
   let activeCategory = 'All';
 
   const searchInput = document.getElementById('searchInput');
+  const clearSearchBtn = document.getElementById('clearSearchBtn');
   const categoriesContainer = document.getElementById('categoriesContainer');
   const qaContainer = document.getElementById('qaContainer');
 
   function createCategoryButtons() {
     categoriesContainer.innerHTML = '';
-
     const allBtn = document.createElement('button');
     allBtn.textContent = 'All';
     allBtn.className = 'category-btn active';
@@ -159,44 +176,34 @@
 
   function filterAndRender() {
     const searchTerm = searchInput.value.trim().toLowerCase();
-
     filteredData = allData.filter(item => {
       const inCategory = (activeCategory === 'All' || item.Category === activeCategory);
       const searchableText = (item.Category + ' ' + item.Question + ' ' + item.Tags).toLowerCase();
-      const matchesSearch = searchableText.includes(searchTerm);
-
-      return inCategory && matchesSearch;
+      return inCategory && searchableText.includes(searchTerm);
     });
-
     renderQAItems();
   }
 
   function renderQAItems() {
     qaContainer.innerHTML = '';
-
     if (filteredData.length === 0) {
       qaContainer.innerHTML = '<p>No results found.</p>';
       return;
     }
-
     filteredData.forEach(item => {
       const itemDiv = document.createElement('div');
       itemDiv.className = 'qa-item';
-
       const question = document.createElement('div');
       question.className = 'question';
       question.innerHTML = `<span>${item.Question}</span><span class="toggle-icon">+</span>`;
-
       const answer = document.createElement('div');
       answer.className = 'answer';
       answer.textContent = item.Answer;
-
       question.addEventListener('click', () => {
         answer.classList.toggle('show');
         const icon = question.querySelector('.toggle-icon');
         icon.textContent = answer.classList.contains('show') ? '−' : '+';
       });
-
       itemDiv.appendChild(question);
       itemDiv.appendChild(answer);
       qaContainer.appendChild(itemDiv);
@@ -217,17 +224,13 @@
       header: true,
       skipEmptyLines: true,
       complete: function(results) {
-        allData = results.data.map(row => {
-          return {
-            Category: row['Category']?.trim() || '',
-            Question: row['Question']?.trim() || '',
-            Answer: row['Answer']?.trim() || '',
-            Tags: row['Tags']?.trim() || '',
-          };
-        });
-
+        allData = results.data.map(row => ({
+          Category: row['Category']?.trim() || '',
+          Question: row['Question']?.trim() || '',
+          Answer: row['Answer']?.trim() || '',
+          Tags: row['Tags']?.trim() || '',
+        }));
         categories = new Set(allData.map(item => item.Category).filter(c => c));
-
         createCategoryButtons();
         filterAndRender();
       },
@@ -239,31 +242,31 @@
   }
 
   searchInput.addEventListener('input', debounce(filterAndRender, 250));
+  clearSearchBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    activeCategory = 'All';
+    updateActiveCategoryButtons();
+    filterAndRender();
+  });
 
   loadData();
 </script>
 </div>
 <script>
-    function sendIframeHeight() {
-        const contentContainer = document.getElementById('Q&AContainer');
-        if (contentContainer) {
-            const height = contentContainer.scrollHeight + 20;
-            window.parent.postMessage({ type: 'setIframeHeight', height: height }, 'https://www.menohello.com');
-        }
+  function sendIframeHeight() {
+    const contentContainer = document.getElementById('Q&AContainer');
+    if (contentContainer) {
+      const height = contentContainer.scrollHeight + 20;
+      window.parent.postMessage({ type: 'setIframeHeight', height: height }, 'https://www.menohello.com');
     }
-    window.addEventListener('DOMContentLoaded', () => {
-      sendIframeHeight();
-    });
-    const containerToObserve = document.getElementById('Q&AContainer'); 
-    if (containerToObserve) {
-        const resizeObserver = new ResizeObserver(entries => {
-            sendIframeHeight();
-        });
-        resizeObserver.observe(containerToObserve);
-    }
-    window.addEventListener('load', () => {
-      sendIframeHeight();
-    });
+  }
+  window.addEventListener('DOMContentLoaded', sendIframeHeight);
+  window.addEventListener('load', sendIframeHeight);
+  const containerToObserve = document.getElementById('Q&AContainer');
+  if (containerToObserve) {
+    const resizeObserver = new ResizeObserver(sendIframeHeight);
+    resizeObserver.observe(containerToObserve);
+  }
 </script>
 </body>
 </html>
