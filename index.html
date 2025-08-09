@@ -60,12 +60,37 @@
     font-weight: 600;
     font-size: 1.1rem;
     margin-bottom: 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  /* Hover effect for questions */
+  .question:hover {
+    background-color: #fff1ee;
+    border-radius: 6px;
+    padding: 4px 6px;
+    transition: background-color 0.2s ease;
+  }
+  .toggle-icon {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #ffa798;
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+  .question:hover .toggle-icon {
+    color: #ff7e6b;
   }
   .answer {
     font-weight: 400;
     font-size: 1rem;
     line-height: 1.4;
     white-space: pre-wrap;
+    display: none; /* Hidden by default */
+    margin-top: 10px;
+  }
+  .answer.show {
+    display: block;
   }
   @media (max-width: 600px) {
     #searchInput {
@@ -103,7 +128,6 @@
   function createCategoryButtons() {
     categoriesContainer.innerHTML = '';
 
-    // Add "All" button first
     const allBtn = document.createElement('button');
     allBtn.textContent = 'All';
     allBtn.className = 'category-btn active';
@@ -161,11 +185,17 @@
 
       const question = document.createElement('div');
       question.className = 'question';
-      question.textContent = item.Question;
+      question.innerHTML = `<span>${item.Question}</span><span class="toggle-icon">+</span>`;
 
       const answer = document.createElement('div');
       answer.className = 'answer';
       answer.textContent = item.Answer;
+
+      question.addEventListener('click', () => {
+        answer.classList.toggle('show');
+        const icon = question.querySelector('.toggle-icon');
+        icon.textContent = answer.classList.contains('show') ? '−' : '+';
+      });
 
       itemDiv.appendChild(question);
       itemDiv.appendChild(answer);
@@ -173,7 +203,6 @@
     });
   }
 
-  // Debounce helper to avoid excessive filtering during typing
   function debounce(func, wait) {
     let timeout;
     return function(...args) {
@@ -189,7 +218,6 @@
       skipEmptyLines: true,
       complete: function(results) {
         allData = results.data.map(row => {
-          // Normalize property names in case of whitespace
           return {
             Category: row['Category']?.trim() || '',
             Question: row['Question']?.trim() || '',
@@ -198,7 +226,6 @@
           };
         });
 
-        // Gather unique categories for buttons
         categories = new Set(allData.map(item => item.Category).filter(c => c));
 
         createCategoryButtons();
@@ -217,46 +244,26 @@
 </script>
 </div>
 <script>
-    // 1. Function to send iframe height to parent
     function sendIframeHeight() {
-        // You'll need a main container div for your products content
         const contentContainer = document.getElementById('Q&AContainer');
         if (contentContainer) {
-            // Calculate scroll height and add a small buffer
             const height = contentContainer.scrollHeight + 20;
-            
-            // Log the height for debugging
-            console.log('GitHub Page: Sending iframe height:', height);
-            
-            // IMPORTANT: The targetOrigin MUST be your Pixpa domain
             window.parent.postMessage({ type: 'setIframeHeight', height: height }, 'https://www.menohello.com');
         }
     }
-    
-    // 2. Set up the observer and initial call
-    
-    // Call on initial page load
     window.addEventListener('DOMContentLoaded', () => {
       sendIframeHeight();
     });
-
-    // Use a ResizeObserver to automatically send a new height whenever the content size changes
     const containerToObserve = document.getElementById('Q&AContainer'); 
     if (containerToObserve) {
         const resizeObserver = new ResizeObserver(entries => {
-            console.log('GitHub Page: ResizeObserver detected change, requesting new height.');
             sendIframeHeight();
         });
         resizeObserver.observe(containerToObserve);
     }
-    
-    // Fallback for slower-loading content like images
     window.addEventListener('load', () => {
-      console.log('GitHub Page: window loaded, sending initial height.');
       sendIframeHeight();
     });
 </script>
-
-
 </body>
 </html>
