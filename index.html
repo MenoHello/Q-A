@@ -178,6 +178,9 @@
     });
 
     
+  renderQAItems();
+  }
+
   function renderQAItems() {
     qaContainer.innerHTML = '';
 
@@ -192,26 +195,16 @@
 
       const question = document.createElement('div');
       question.className = 'question';
-      question.textContent = item.Question;
+      question.innerHTML = `<span>${item.Question}</span><span class="toggle-icon">+</span>`;
 
       const answer = document.createElement('div');
       answer.className = 'answer';
       answer.textContent = item.Answer;
 
-      // Toggle answer visibility - only one open at a time
       question.addEventListener('click', () => {
-        // Close all other answers
-        document.querySelectorAll('.answer.show').forEach(openAnswer => {
-          if (openAnswer !== answer) {
-            openAnswer.classList.remove('show');
-          }
-        });
-
-        // Toggle the clicked one
         answer.classList.toggle('show');
-
-        // Adjust iframe height
-        sendIframeHeight();
+        const icon = question.querySelector('.toggle-icon');
+        icon.textContent = answer.classList.contains('show') ? '−' : '+';
       });
 
       itemDiv.appendChild(question);
