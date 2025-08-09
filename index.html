@@ -105,6 +105,24 @@
       margin: 3px 6px 3px 0;
       font-size: 0.9rem;
     }
+    
+     .question {
+    cursor: pointer;
+  }
+  .question:hover {
+    color: #ffa798;
+  }
+  .answer {
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    display: none; /* Hidden by default */
+    margin-top: 10px;
+  }
+  .answer.show {
+    display: block; /* Show when toggled */
+  }
   }
 </style>
 </head>
@@ -112,7 +130,7 @@
 <div id="Q&AContainer">
 <div id="QandAHeader">
   <input type="text" id="searchInput" placeholder="Search questions, categories, or tags..." aria-label="Search questions" />
-  <button id="clearSearch">Clear Search</button>
+  <button id="clearSearch">Clear</button>
 </div>
 
 <div id="categoriesContainer" aria-label="Category filters"></div>
@@ -177,8 +195,7 @@
       return inCategory && matchesSearch;
     });
 
-    
-  renderQAItems();
+    renderQAItems();
   }
 
   function renderQAItems() {
@@ -186,6 +203,7 @@
 
     if (filteredData.length === 0) {
       qaContainer.innerHTML = '<p>No results found.</p>';
+      sendIframeHeight();
       return;
     }
 
@@ -195,24 +213,25 @@
 
       const question = document.createElement('div');
       question.className = 'question';
-      question.innerHTML = `<span>${item.Question}</span><span class="toggle-icon">+</span>`;
+      question.textContent = item.Question;
 
       const answer = document.createElement('div');
       answer.className = 'answer';
       answer.textContent = item.Answer;
 
-      question.addEventListener('click', () => {
-        answer.classList.toggle('show');
-        const icon = question.querySelector('.toggle-icon');
-        icon.textContent = answer.classList.contains('show') ? '−' : '+';
-      });
-
       itemDiv.appendChild(question);
       itemDiv.appendChild(answer);
+
+      itemDiv.addEventListener('click', () => {
+        itemDiv.classList.toggle('open');
+        sendIframeHeight();
+      });
+
       qaContainer.appendChild(itemDiv);
     });
-  }
 
+    sendIframeHeight();
+  }
 
   // Debounce helper
   function debounce(func, wait) {
