@@ -9,10 +9,16 @@
   html, body {
     margin: 0;
     padding: 0;
+    overflow-x: hidden; /* Prevent horizontal scrollbar */
     overflow-y: hidden; /* Prevent vertical scrollbar inside iframe */
     font-family: 'Poppins', sans-serif;
     background: #ffe9e5;
     color: #000;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  *, *::before, *::after {
+    box-sizing: border-box;
   }
   #QandAHeader {
     display: flex;
@@ -20,8 +26,13 @@
     align-items: center;
     margin-bottom: 20px;
     max-width: 520px; /* Controls width of search + button */
-}
-
+    width: 100%;
+  }
+  #Q\&AContainer {
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+  }
   #searchInput {
     flex: 1;
     font-size: 1rem;
@@ -32,18 +43,27 @@
     font-weight: 400;
   }
   #clearSearch {
-    background: #ffa798;
+    background: #cccccc;
     border: none;
-    font-family: 'Poppins', sans-serif;
-    color: white;
+    color: #666666;
     padding: 10px 14px;
     border-radius: 6px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.3s ease;
+    transition: background 0.3s ease, color 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+    flex-shrink: 0;
   }
-  #clearSearch:hover {
+  #clearSearch.active {
+    background: #ffa798;
+    color: white;
+  }
+  #clearSearch.active:hover {
     background: #ff8c7a;
+  }
+  #clearSearch:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
   }
   #categoriesContainer {
     margin-bottom: 25px;
@@ -58,9 +78,8 @@
     font-weight: 600;
     font-family: 'Poppins', sans-serif;
     transition: background-color 0.3s ease;
-    color: black; 
+    color: black;
     text-decoration: none;
-
   }
   .category-btn.active,
   .category-btn:hover {
@@ -110,12 +129,21 @@
     display: block;
   }
   @media (max-width: 600px) {
+    #Q\&AContainer {
+      padding: 15px;
+    }
     #QandAHeader {
       flex-direction: column;
       max-width: 100%;
+      gap: 8px;
     }
     #searchInput {
       width: 100%;
+      min-width: 0;
+    }
+    #clearSearch {
+      width: 100%;
+      padding: 12px 14px;
     }
     .category-btn {
       padding: 6px 12px;
@@ -150,6 +178,18 @@
   const clearSearchBtn = document.getElementById('clearSearch');
   const categoriesContainer = document.getElementById('categoriesContainer');
   const qaContainer = document.getElementById('qaContainer');
+
+  // Function to update clear button state
+  function updateClearButtonState() {
+    const hasSearchTerm = searchInput.value.trim().length > 0;
+    if (hasSearchTerm) {
+      clearSearchBtn.classList.add('active');
+      clearSearchBtn.disabled = false;
+    } else {
+      clearSearchBtn.classList.remove('active');
+      clearSearchBtn.disabled = true;
+    }
+  }
 
   function createCategoryButtons() {
     categoriesContainer.innerHTML = '';
@@ -186,6 +226,7 @@
 
   function filterAndRender() {
     const searchTerm = searchInput.value.trim().toLowerCase();
+    updateClearButtonState(); // Update button state when filtering
 
     filteredData = allData.filter(item => {
       const inCategory = (activeCategory === 'All' || item.Category === activeCategory);
@@ -272,6 +313,7 @@
         categories = new Set(allData.map(item => item.Category).filter(c => c));
 
         createCategoryButtons();
+        updateClearButtonState(); // Initialize button state
         filterAndRender();
       },
       error: function(err) {
@@ -284,6 +326,7 @@
   searchInput.addEventListener('input', debounce(filterAndRender, 250));
   clearSearchBtn.addEventListener('click', () => {
     searchInput.value = '';
+    updateClearButtonState();
     filterAndRender();
   });
 
